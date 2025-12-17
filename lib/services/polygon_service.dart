@@ -8,6 +8,9 @@ import '../models/stock_quote.dart';
 
 class PolygonService {
   static const _baseUrl = 'https://api.polygon.io';
+  static Map<String, String> get _authHeaders => {
+        'Authorization': 'Bearer ${ApiConfig.polygonApiKey}',
+      };
 
   static Future<List<StockQuote>> fetchWatchlist(
     List<String> tickers, {
@@ -22,9 +25,13 @@ class PolygonService {
       'apiKey': ApiConfig.polygonApiKey,
     });
 
-    final response = await http.get(uri);
+    final response = await http.get(uri, headers: _authHeaders);
     if (response.statusCode != 200) {
-      throw Exception('Unable to load watchlist: ${response.statusCode}');
+      final isAuthError = response.statusCode == 401 || response.statusCode == 403;
+      final reason = isAuthError
+          ? 'Check Polygon API key or plan permissions.'
+          : 'Unexpected response.';
+      throw Exception('Unable to load watchlist: ${response.statusCode} ($reason)');
     }
 
     final body = jsonDecode(response.body) as Map<String, dynamic>;
@@ -35,8 +42,10 @@ class PolygonService {
   static Future<List<MarketCandle>> fetchIntradaySeries(String ticker) async {
     final now = DateTime.now().toUtc();
     final from = now.subtract(const Duration(hours: 6));
+    final fromMillis = from.millisecondsSinceEpoch;
+    final toMillis = now.millisecondsSinceEpoch;
     final uri = Uri.parse(
-      '$_baseUrl/v2/aggs/ticker/$ticker/range/5/minute/${from.toIso8601String()}/${now.toIso8601String()}',
+      '$_baseUrl/v2/aggs/ticker/$ticker/range/5/minute/$fromMillis/$toMillis',
     ).replace(queryParameters: <String, String>{
       'adjusted': 'true',
       'sort': 'asc',
@@ -44,7 +53,7 @@ class PolygonService {
       'apiKey': ApiConfig.polygonApiKey,
     });
 
-    final response = await http.get(uri);
+    final response = await http.get(uri, headers: _authHeaders);
     if (response.statusCode != 200) {
       throw Exception('Unable to load chart data: ${response.statusCode}');
     }
@@ -64,7 +73,7 @@ class PolygonService {
       'apiKey': ApiConfig.polygonApiKey,
     });
 
-    final response = await http.get(uri);
+    final response = await http.get(uri, headers: _authHeaders);
     if (response.statusCode != 200) {
       throw Exception('Unable to load performance for $sectorName');
     }
@@ -74,7 +83,7 @@ class PolygonService {
     final first = results.isNotEmpty ? results.first : <String, dynamic>{};
     final close = (first['c'] ?? 0).toDouble();
     final open = (first['o'] ?? close).toDouble();
-    final changePercent = open == 0 ? 0 : ((close - open) / open) * 100;
+    final changePercent = open == 0 ? 0.0 : ((close - open) / open) * 100;
 
     return SectorPerformance(
       name: sectorName,
