@@ -21,6 +21,7 @@ class NewsCard extends StatelessWidget {
                   width: 64,
                   height: 64,
                   fit: BoxFit.cover,
+                  errorBuilder: (context, _, __) => const Icon(Icons.broken_image),
                 ),
               )
             : const Icon(Icons.article_outlined),
