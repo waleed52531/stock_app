@@ -8,6 +8,9 @@ import '../models/stock_quote.dart';
 
 class PolygonService {
   static const _baseUrl = 'https://api.polygon.io';
+  static Map<String, String> get _authHeaders => {
+        'Authorization': 'Bearer ${ApiConfig.polygonApiKey}',
+      };
 
   static Future<List<StockQuote>> fetchWatchlist(
     List<String> tickers, {
@@ -22,12 +25,13 @@ class PolygonService {
       'apiKey': ApiConfig.polygonApiKey,
     });
 
-    final response = await http.get(uri);
+    final response = await http.get(uri, headers: _authHeaders);
     if (response.statusCode != 200) {
-      final message = _extractMessage(response.body);
-      final status = response.statusCode;
-      final reason = message.isNotEmpty ? ': $message' : '';
-      throw Exception('Unable to load watchlist: $status$reason');
+      final isAuthError = response.statusCode == 401 || response.statusCode == 403;
+      final reason = isAuthError
+          ? 'Check Polygon API key or plan permissions.'
+          : 'Unexpected response.';
+      throw Exception('Unable to load watchlist: ${response.statusCode} ($reason)');
     }
 
     final body = jsonDecode(response.body) as Map<String, dynamic>;
@@ -49,7 +53,7 @@ class PolygonService {
       'apiKey': ApiConfig.polygonApiKey,
     });
 
-    final response = await http.get(uri);
+    final response = await http.get(uri, headers: _authHeaders);
     if (response.statusCode != 200) {
       final message = _extractMessage(response.body);
       final status = response.statusCode;
@@ -72,7 +76,7 @@ class PolygonService {
       'apiKey': ApiConfig.polygonApiKey,
     });
 
-    final response = await http.get(uri);
+    final response = await http.get(uri, headers: _authHeaders);
     if (response.statusCode != 200) {
       final message = _extractMessage(response.body);
       final reason = message.isNotEmpty ? ': $message' : '';
