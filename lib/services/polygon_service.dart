@@ -8,9 +8,18 @@ import '../models/stock_quote.dart';
 
 class PolygonService {
   static const _baseUrl = 'https://api.polygon.io';
+  static String get _apiKey => ApiConfig.polygonApiKey;
   static Map<String, String> get _authHeaders => {
         'Authorization': 'Bearer ${ApiConfig.polygonApiKey}',
       };
+
+  static void _ensureApiKey() {
+    if (_apiKey.trim().isEmpty) {
+      throw Exception(
+        'Polygon API key is missing. Provide --dart-define=POLYGON_API_KEY=YOUR_KEY.',
+      );
+    }
+  }
 
   static Future<List<StockQuote>> fetchWatchlist(
     List<String> tickers, {
