@@ -17,12 +17,13 @@ class PolygonService {
     String locale = 'us',
     String market = 'stocks',
   }) async {
+    _ensureApiKey();
     final joinedTickers = tickers.join(',');
     final uri = Uri.parse(
       '$_baseUrl/v2/snapshot/locale/$locale/markets/$market/tickers',
     ).replace(queryParameters: <String, String>{
       'tickers': joinedTickers,
-      'apiKey': ApiConfig.polygonApiKey,
+      'apiKey': _apiKey,
     });
 
     final response = await http.get(uri, headers: _authHeaders);
@@ -40,6 +41,7 @@ class PolygonService {
   }
 
   static Future<List<MarketCandle>> fetchIntradaySeries(String ticker) async {
+    _ensureApiKey();
     final now = DateTime.now().toUtc();
     final from = now.subtract(const Duration(hours: 6));
     final fromMillis = from.millisecondsSinceEpoch;
@@ -50,7 +52,7 @@ class PolygonService {
       'adjusted': 'true',
       'sort': 'asc',
       'limit': '120',
-      'apiKey': ApiConfig.polygonApiKey,
+      'apiKey': _apiKey,
     });
 
     final response = await http.get(uri, headers: _authHeaders);
@@ -69,11 +71,12 @@ class PolygonService {
     String sectorName,
     String representativeTicker,
   ) async {
+    _ensureApiKey();
     final uri = Uri.parse(
       '$_baseUrl/v2/aggs/ticker/$representativeTicker/prev',
     ).replace(queryParameters: <String, String>{
       'adjusted': 'true',
-      'apiKey': ApiConfig.polygonApiKey,
+      'apiKey': _apiKey,
     });
 
     final response = await http.get(uri, headers: _authHeaders);
