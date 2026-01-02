@@ -1,0 +1,3 @@
+class ApiInterceptor {
+  const ApiInterceptor();
+}
