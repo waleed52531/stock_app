@@ -1,0 +1,3 @@
+class LocalStorage {
+  const LocalStorage();
+}
