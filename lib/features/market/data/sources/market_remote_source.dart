@@ -11,10 +11,6 @@ class MarketRemoteSource {
 
   final ApiClient _client;
 
-  static Map<String, String> get _authHeaders => {
-        'Authorization': 'Bearer ${Env.polygonApiKey}',
-      };
-
   void _ensureApiKey() {
     if (Env.polygonApiKey.trim().isEmpty) {
       throw Exception(
@@ -29,26 +25,43 @@ class MarketRemoteSource {
     String market = 'stocks',
   }) async {
     _ensureApiKey();
-    final joinedTickers = tickers.join(',');
-    final uri = Uri.parse(
-      '${ApiEndpoints.polygonBaseUrl}/v2/snapshot/locale/$locale/markets/$market/tickers',
-    ).replace(queryParameters: <String, String>{
-      'tickers': joinedTickers,
-      'apiKey': Env.polygonApiKey,
-    });
-
-    final response = await _client.get(uri, headers: _authHeaders);
-    if (response.statusCode != 200) {
-      final isAuthError = response.statusCode == 401 || response.statusCode == 403;
-      final reason = isAuthError
-          ? 'Check Polygon API key or plan permissions.'
-          : 'Unexpected response.';
-      throw Exception('Unable to load watchlist: ${response.statusCode} ($reason)');
+    if (locale.toLowerCase() != 'us') {
+      throw Exception(
+        'Polygon does not provide $locale market snapshots. Use a PSX data provider or remove this section.',
+      );
     }
+    final results = await Future.wait(
+      tickers.map((ticker) async {
+        final uri = Uri.parse(
+          '${ApiEndpoints.polygonBaseUrl}/v2/aggs/ticker/$ticker/prev',
+        ).replace(queryParameters: <String, String>{
+          'adjusted': 'true',
+          'apiKey': Env.polygonApiKey,
+        });
 
-    final body = jsonDecode(response.body) as Map<String, dynamic>;
-    final results = (body['tickers'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
-    return results.map(StockQuote.fromSnapshotJson).toList();
+        final response = await _client.get(uri);
+        if (response.statusCode != 200) {
+          final isAuthError =
+              response.statusCode == 401 || response.statusCode == 403;
+          final message = extractApiMessage(response.body);
+          final reason = isAuthError
+              ? 'Check Polygon API key or plan permissions for aggregate data.'
+              : 'Unexpected response.';
+          final detail = message.isNotEmpty ? ' ${message.trim()}' : '';
+          throw Exception(
+            'Unable to load watchlist: ${response.statusCode} ($reason)$detail',
+          );
+        }
+
+        final body = jsonDecode(response.body) as Map<String, dynamic>;
+        final aggregates =
+            (body['results'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
+        final first = aggregates.isNotEmpty ? aggregates.first : <String, dynamic>{};
+        return StockQuote.fromPreviousAgg(ticker, first);
+      }),
+    );
+
+    return results;
   }
 
   Future<List<dynamic>> fetchIntradaySeriesRaw(String ticker) async {
@@ -66,7 +79,7 @@ class MarketRemoteSource {
       'apiKey': Env.polygonApiKey,
     });
 
-    final response = await _client.get(uri, headers: _authHeaders);
+    final response = await _client.get(uri);
     if (response.statusCode != 200) {
       final message = extractApiMessage(response.body);
       final status = response.statusCode;

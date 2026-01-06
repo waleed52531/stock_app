@@ -28,4 +28,19 @@ class StockQuote {
       previousClose: previousClosePrice,
     );
   }
+
+  factory StockQuote.fromPreviousAgg(String ticker, Map<String, dynamic> json) {
+    final closePrice = (json['c'] ?? 0).toDouble();
+    final openPrice = (json['o'] ?? 0).toDouble();
+    final changeValue = closePrice - openPrice;
+    final changePercentValue =
+        openPrice == 0 ? 0 : (changeValue / openPrice) * 100;
+    return StockQuote(
+      ticker: ticker,
+      price: closePrice,
+      change: changeValue,
+      changePercent: changePercentValue,
+      previousClose: openPrice,
+    );
+  }
 }
