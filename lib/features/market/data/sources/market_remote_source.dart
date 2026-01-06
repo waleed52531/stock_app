@@ -51,7 +51,7 @@ class MarketRemoteSource {
     return results.map(StockQuote.fromSnapshotJson).toList();
   }
 
-  Future<List<double>> fetchIntradaySeriesRaw(String ticker) async {
+  Future<List<dynamic>> fetchIntradaySeriesRaw(String ticker) async {
     _ensureApiKey();
     final now = DateTime.now().toUtc();
     final from = now.subtract(const Duration(hours: 6));
