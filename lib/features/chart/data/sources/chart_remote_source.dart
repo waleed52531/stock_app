@@ -11,10 +11,6 @@ class ChartRemoteSource {
 
   final ApiClient _client;
 
-  static Map<String, String> get _authHeaders => {
-        'Authorization': 'Bearer ${Env.polygonApiKey}',
-      };
-
   void _ensureApiKey() {
     if (Env.polygonApiKey.trim().isEmpty) {
       throw Exception(
@@ -38,7 +34,7 @@ class ChartRemoteSource {
       'apiKey': Env.polygonApiKey,
     });
 
-    final response = await _client.get(uri, headers: _authHeaders);
+    final response = await _client.get(uri);
     if (response.statusCode != 200) {
       final message = extractApiMessage(response.body);
       final status = response.statusCode;
