@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../app/config/env.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../data/models/stock_quote.dart';
 import '../../data/sources/market_remote_source.dart';
@@ -17,15 +18,40 @@ class _MarketPageState extends State<MarketPage> {
   late Future<List<StockQuote>> _pakistanQuotes;
   late Future<List<StockQuote>> _globalQuotes;
 
+  bool get _hasApiKey => Env.polygonApiKey.trim().isNotEmpty;
+
   @override
   void initState() {
     super.initState();
-    _pakistanQuotes = _remoteSource.fetchWatchlist(
+    _pakistanQuotes = _loadPakistanQuotes();
+    _globalQuotes = _loadGlobalQuotes();
+  }
+
+  Future<List<StockQuote>> _loadPakistanQuotes() {
+    if (!_hasApiKey) {
+      return Future.value([]);
+    }
+    return _remoteSource.fetchWatchlist(
       const ['OGDC', 'HBL', 'PSO'],
       locale: 'pk',
     );
-    _globalQuotes = _remoteSource.fetchWatchlist(
+  }
+
+  Future<List<StockQuote>> _loadGlobalQuotes() {
+    if (!_hasApiKey) {
+      return Future.value([]);
+    }
+    return _remoteSource.fetchWatchlist(
       const ['AAPL', 'MSFT', 'GOOGL', 'NVDA'],
+    );
+  }
+
+  Widget _buildMissingKeyMessage() {
+    return const Padding(
+      padding: EdgeInsets.all(16),
+      child: Text(
+        'Polygon API key is missing. Add --dart-define=POLYGON_API_KEY=YOUR_KEY to load market data.',
+      ),
     );
   }
 
@@ -34,13 +60,8 @@ class _MarketPageState extends State<MarketPage> {
     return RefreshIndicator(
       onRefresh: () async {
         setState(() {
-          _pakistanQuotes = _remoteSource.fetchWatchlist(
-            const ['OGDC', 'HBL', 'PSO'],
-            locale: 'pk',
-          );
-          _globalQuotes = _remoteSource.fetchWatchlist(
-            const ['AAPL', 'MSFT', 'GOOGL', 'NVDA'],
-          );
+          _pakistanQuotes = _loadPakistanQuotes();
+          _globalQuotes = _loadGlobalQuotes();
         });
         await Future.wait([_pakistanQuotes, _globalQuotes]);
       },
@@ -56,6 +77,9 @@ class _MarketPageState extends State<MarketPage> {
           FutureBuilder<List<StockQuote>>(
             future: _pakistanQuotes,
             builder: (context, snapshot) {
+              if (!_hasApiKey) {
+                return _buildMissingKeyMessage();
+              }
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(
                   child: Padding(
@@ -86,6 +110,9 @@ class _MarketPageState extends State<MarketPage> {
           FutureBuilder<List<StockQuote>>(
             future: _globalQuotes,
             builder: (context, snapshot) {
+              if (!_hasApiKey) {
+                return _buildMissingKeyMessage();
+              }
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(
                   child: Padding(
