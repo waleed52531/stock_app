@@ -43,24 +43,4 @@ class StockQuote {
       previousClose: openPrice,
     );
   }
-
-  factory StockQuote.fromTwelveDataQuote(Map<String, dynamic> json) {
-    final price = double.tryParse(json['close']?.toString() ?? '') ?? 0;
-    final open = double.tryParse(json['open']?.toString() ?? '') ?? 0;
-    final previousClose =
-        double.tryParse(json['previous_close']?.toString() ?? '') ?? open;
-    final changeValue = double.tryParse(json['change']?.toString() ?? '') ??
-        (price - previousClose);
-    final changePercent = double.tryParse(
-          json['percent_change']?.toString() ?? '',
-        ) ??
-        (previousClose == 0 ? 0 : (changeValue / previousClose) * 100);
-    return StockQuote(
-      ticker: json['symbol']?.toString() ?? '',
-      price: price,
-      change: changeValue,
-      changePercent: changePercent,
-      previousClose: previousClose,
-    );
-  }
 }
