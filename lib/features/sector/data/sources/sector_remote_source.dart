@@ -11,14 +11,10 @@ class SectorRemoteSource {
 
   final ApiClient _client;
 
-  static Map<String, String> get _authHeaders => {
-        'Authorization': 'Bearer ${Env.polygonApiKey}',
-      };
-
   void _ensureApiKey() {
     if (Env.polygonApiKey.trim().isEmpty) {
       throw Exception(
-        'Polygon API key is missing. Provide --dart-define=POLYGON_API_KEY=YOUR_KEY.',
+        'Twelve Data API key is missing. Provide --dart-define=POLYGON_API_KEY=YOUR_KEY.',
       );
     }
   }
@@ -29,13 +25,13 @@ class SectorRemoteSource {
   ) async {
     _ensureApiKey();
     final uri = Uri.parse(
-      '${ApiEndpoints.polygonBaseUrl}/v2/aggs/ticker/$representativeTicker/prev',
+      '${ApiEndpoints.polygonBaseUrl}/quote',
     ).replace(queryParameters: <String, String>{
-      'adjusted': 'true',
-      'apiKey': Env.polygonApiKey,
+      'symbol': representativeTicker,
+      'apikey': Env.polygonApiKey,
     });
 
-    final response = await _client.get(uri, headers: _authHeaders);
+    final response = await _client.get(uri);
     if (response.statusCode != 200) {
       final message = extractApiMessage(response.body);
       final reason = message.isNotEmpty ? ': $message' : '';
@@ -43,10 +39,14 @@ class SectorRemoteSource {
     }
 
     final body = jsonDecode(response.body) as Map<String, dynamic>;
-    final results = (body['results'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
-    final first = results.isNotEmpty ? results.first : <String, dynamic>{};
-    final close = (first['c'] ?? 0).toDouble();
-    final open = (first['o'] ?? close).toDouble();
+    final data = body['data'];
+    final quote = data is List
+        ? (data.isNotEmpty ? data.first as Map<String, dynamic> : <String, dynamic>{})
+        : (data is Map<String, dynamic> ? data : body);
+    final close =
+        double.tryParse(quote['close']?.toString() ?? '') ?? 0;
+    final open =
+        double.tryParse(quote['open']?.toString() ?? '') ?? close;
     final changePercent = open == 0 ? 0.0 : ((close - open) / open) * 100;
 
     return SectorPerformance(
