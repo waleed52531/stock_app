@@ -14,24 +14,20 @@ class ChartRemoteSource {
   void _ensureApiKey() {
     if (Env.polygonApiKey.trim().isEmpty) {
       throw Exception(
-        'Polygon API key is missing. Provide --dart-define=POLYGON_API_KEY=YOUR_KEY.',
+        'Twelve Data API key is missing. Provide --dart-define=POLYGON_API_KEY=YOUR_KEY.',
       );
     }
   }
 
   Future<List<MarketCandle>> fetchIntradaySeries(String ticker) async {
     _ensureApiKey();
-    final now = DateTime.now().toUtc();
-    final from = now.subtract(const Duration(hours: 6));
-    final fromMillis = from.millisecondsSinceEpoch;
-    final toMillis = now.millisecondsSinceEpoch;
     final uri = Uri.parse(
-      '${ApiEndpoints.polygonBaseUrl}/v2/aggs/ticker/$ticker/range/5/minute/$fromMillis/$toMillis',
+      '${ApiEndpoints.polygonBaseUrl}/time_series',
     ).replace(queryParameters: <String, String>{
-      'adjusted': 'true',
-      'sort': 'asc',
-      'limit': '120',
-      'apiKey': Env.polygonApiKey,
+      'symbol': ticker,
+      'interval': '5min',
+      'outputsize': '120',
+      'apikey': Env.polygonApiKey,
     });
 
     final response = await _client.get(uri);
@@ -42,7 +38,8 @@ class ChartRemoteSource {
       throw Exception('Unable to load chart data: $status$reason');
     }
     final body = jsonDecode(response.body) as Map<String, dynamic>;
-    final results = (body['results'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
-    return results.map(MarketCandle.fromAgg).toList();
+    final values =
+        (body['values'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
+    return values.map(MarketCandle.fromTwelveData).toList().reversed.toList();
   }
 }

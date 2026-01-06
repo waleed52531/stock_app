@@ -50,7 +50,7 @@ class _MarketPageState extends State<MarketPage> {
     return const Padding(
       padding: EdgeInsets.all(16),
       child: Text(
-        'Polygon API key is missing. Add --dart-define=POLYGON_API_KEY=YOUR_KEY to load market data.',
+        'Twelve Data API key is missing. Add --dart-define=POLYGON_API_KEY=YOUR_KEY to load market data.',
       ),
     );
   }

@@ -1,7 +1,7 @@
 class Env {
   Env._();
 
-  /// Polygon.io API key. Override at runtime with --dart-define=POLYGON_API_KEY.
+  /// Twelve Data API key. Override at runtime with --dart-define=POLYGON_API_KEY.
   static const polygonApiKey = String.fromEnvironment(
     'POLYGON_API_KEY',
     defaultValue: 'XsY_mp0DFDG_ZBn3SqOnUYBnNjB3pm1J',

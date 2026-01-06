@@ -14,23 +14,22 @@ class MarketRemoteSource {
   void _ensureApiKey() {
     if (Env.polygonApiKey.trim().isEmpty) {
       throw Exception(
-        'Polygon API key is missing. Provide --dart-define=POLYGON_API_KEY=YOUR_KEY.',
+        'Twelve Data API key is missing. Provide --dart-define=POLYGON_API_KEY=YOUR_KEY.',
       );
     }
   }
 
+  // ignore: unused_parameter
   Future<List<StockQuote>> fetchWatchlist(
     List<String> tickers, {
     String locale = 'us',
     String market = 'stocks',
   }) async {
     _ensureApiKey();
-    final joinedTickers = tickers.join(',');
-    final uri = Uri.parse(
-      '${ApiEndpoints.polygonBaseUrl}/v2/snapshot/locale/$locale/markets/$market/tickers',
-    ).replace(queryParameters: <String, String>{
-      'tickers': joinedTickers,
-      'apiKey': Env.polygonApiKey,
+    final uri = Uri.parse('${ApiEndpoints.polygonBaseUrl}/quote')
+        .replace(queryParameters: <String, String>{
+      'symbol': tickers.join(','),
+      'apikey': Env.polygonApiKey,
     });
 
     final response = await _client.get(uri);
@@ -86,12 +85,12 @@ class MarketRemoteSource {
     final fromMillis = from.millisecondsSinceEpoch;
     final toMillis = now.millisecondsSinceEpoch;
     final uri = Uri.parse(
-      '${ApiEndpoints.polygonBaseUrl}/v2/aggs/ticker/$ticker/range/5/minute/$fromMillis/$toMillis',
+      '${ApiEndpoints.polygonBaseUrl}/time_series',
     ).replace(queryParameters: <String, String>{
-      'adjusted': 'true',
-      'sort': 'asc',
-      'limit': '120',
-      'apiKey': Env.polygonApiKey,
+      'symbol': ticker,
+      'interval': '5min',
+      'outputsize': '120',
+      'apikey': Env.polygonApiKey,
     });
 
     final response = await _client.get(uri);
@@ -102,7 +101,12 @@ class MarketRemoteSource {
       throw Exception('Unable to load chart data: $status$reason');
     }
     final body = jsonDecode(response.body) as Map<String, dynamic>;
-    final results = (body['results'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
-    return results.map((entry) => (entry['c'] ?? 0).toDouble()).toList();
+    final values =
+        (body['values'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
+    return values
+        .map((entry) => double.tryParse(entry['close']?.toString() ?? '') ?? 0)
+        .toList()
+        .reversed
+        .toList();
   }
 }

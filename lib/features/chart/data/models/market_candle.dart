@@ -15,4 +15,13 @@ class MarketCandle {
       close: closePrice,
     );
   }
+
+  factory MarketCandle.fromTwelveData(Map<String, dynamic> json) {
+    final timestamp = DateTime.tryParse(json['datetime']?.toString() ?? '');
+    final closePrice = double.tryParse(json['close']?.toString() ?? '') ?? 0;
+    return MarketCandle(
+      time: timestamp ?? DateTime.fromMillisecondsSinceEpoch(0),
+      close: closePrice,
+    );
+  }
 }
