@@ -25,9 +25,24 @@ class MarketRemoteSource {
     String market = 'stocks',
   }) async {
     _ensureApiKey();
-    if (locale.toLowerCase() != 'us') {
+    final joinedTickers = tickers.join(',');
+    final uri = Uri.parse(
+      '${ApiEndpoints.polygonBaseUrl}/v2/snapshot/locale/$locale/markets/$market/tickers',
+    ).replace(queryParameters: <String, String>{
+      'tickers': joinedTickers,
+      'apiKey': Env.polygonApiKey,
+    });
+
+    final response = await _client.get(uri);
+    if (response.statusCode != 200) {
+      final isAuthError = response.statusCode == 401 || response.statusCode == 403;
+      final message = extractApiMessage(response.body);
+      final reason = isAuthError
+          ? 'Check Polygon API key or plan permissions for snapshot data.'
+          : 'Unexpected response.';
+      final detail = message.isNotEmpty ? ' ${message.trim()}' : '';
       throw Exception(
-        'Polygon does not provide $locale market snapshots. Use a PSX data provider or remove this section.',
+        'Unable to load watchlist: ${response.statusCode} ($reason)$detail',
       );
     }
     final results = await Future.wait(
