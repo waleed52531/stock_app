@@ -11,10 +11,6 @@ class MarketRemoteSource {
 
   final ApiClient _client;
 
-  static Map<String, String> get _authHeaders => {
-        'Authorization': 'Bearer ${Env.polygonApiKey}',
-      };
-
   void _ensureApiKey() {
     if (Env.polygonApiKey.trim().isEmpty) {
       throw Exception(
@@ -37,13 +33,17 @@ class MarketRemoteSource {
       'apiKey': Env.polygonApiKey,
     });
 
-    final response = await _client.get(uri, headers: _authHeaders);
+    final response = await _client.get(uri);
     if (response.statusCode != 200) {
       final isAuthError = response.statusCode == 401 || response.statusCode == 403;
+      final message = extractApiMessage(response.body);
       final reason = isAuthError
-          ? 'Check Polygon API key or plan permissions.'
+          ? 'Check Polygon API key or plan permissions for snapshot data.'
           : 'Unexpected response.';
-      throw Exception('Unable to load watchlist: ${response.statusCode} ($reason)');
+      final detail = message.isNotEmpty ? ' ${message.trim()}' : '';
+      throw Exception(
+        'Unable to load watchlist: ${response.statusCode} ($reason)$detail',
+      );
     }
 
     final body = jsonDecode(response.body) as Map<String, dynamic>;
@@ -66,7 +66,7 @@ class MarketRemoteSource {
       'apiKey': Env.polygonApiKey,
     });
 
-    final response = await _client.get(uri, headers: _authHeaders);
+    final response = await _client.get(uri);
     if (response.statusCode != 200) {
       final message = extractApiMessage(response.body);
       final status = response.statusCode;
