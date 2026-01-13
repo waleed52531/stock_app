@@ -147,12 +147,10 @@ class InMemoryMarketRepository implements MarketRepository {
     for (var i = range.days; i >= 0; i--) {
       final date = now.subtract(Duration(days: i));
       final wave = sin(i / 6) * 2;
-      final dailyClose = (base + wave + (_random.nextDouble() - 0.5))
-          .clamp(1, 1000)
-          .toDouble();
-      final dailyOpen = (dailyClose + (_random.nextDouble() - 0.5)).toDouble();
-      final high = (max(dailyClose, dailyOpen) + _random.nextDouble()).toDouble();
-      final low = (min(dailyClose, dailyOpen) - _random.nextDouble()).toDouble();
+      final dailyClose = (base + wave + (_random.nextDouble() - 0.5)).clamp(1, 1000);
+      final dailyOpen = dailyClose + (_random.nextDouble() - 0.5);
+      final high = max(dailyClose, dailyOpen) + _random.nextDouble();
+      final low = min(dailyClose, dailyOpen) - _random.nextDouble();
       points.add(
         TimeSeriesPoint(
           symbol: symbol,
