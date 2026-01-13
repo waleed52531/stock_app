@@ -1,20 +1,34 @@
 class AppStrings {
   AppStrings._();
 
-  static const appTitle = 'Stock Tracker';
+  static const appTitle = 'PSX Watch';
+  static const watchlistTitle = 'Watchlist';
+  static const searchTitle = 'Search Symbols';
+  static const detailTitle = 'Symbol Detail';
 
-  static const marketTitle = 'Market';
-  static const chartTitle = 'Graph';
-  static const newsTitle = 'News';
-  static const sectorTitle = 'Sector performance';
+  static const addSymbol = 'Add Symbol';
+  static const emptyWatchlistTitle = 'No symbols yet';
+  static const emptyWatchlistBody =
+      'Add PSX symbols to track end-of-day quotes and daily changes.';
+  static const offlineBanner = 'Offline or stale data. Showing cached quotes.';
+  static const retry = 'Retry';
 
-  static const marketNavLabel = 'Market';
-  static const chartNavLabel = 'Graph';
-  static const newsNavLabel = 'News';
-  static const sectorNavLabel = 'Sectors';
+  static const eodLabel = 'EOD / Delayed';
+  static const lastUpdated = 'Last updated';
+  static const lastUpdatedUnavailable = 'Last updated: --';
+  static const dataDisclaimer =
+      'Data is delayed/EOD and is informational only. Not investment advice.';
 
-  static const pakistanSection = 'Pakistan (PSX)';
-  static const globalSection = 'Global (US)';
-  static const chartLabel = 'Ticker (e.g. OGDC for PSX, AAPL for NASDAQ)';
-  static const emptyNews = 'No news right now.';
+  static const searchHint = 'Search by symbol or company name';
+  static const addAction = 'Add';
+  static const addedAction = 'Added';
+  static const removeAction = 'Remove';
+
+  static const chartRange1w = '1W';
+  static const chartRange1m = '1M';
+  static const chartRange3m = '3M';
+  static const chartRange6m = '6M';
+  static const chartRange1y = '1Y';
+  static const chartRange5y = '5Y';
+  static const chartNoData = 'No chart data available.';
 }
