@@ -9,6 +9,7 @@ class AppTheme {
       seedColor: seedColor,
       brightness: Brightness.light,
     );
+
     return ThemeData(
       colorScheme: colorScheme,
       useMaterial3: true,
@@ -18,13 +19,16 @@ class AppTheme {
         foregroundColor: colorScheme.onSurface,
         elevation: 0,
       ),
-      cardTheme: CardTheme(
+
+      // ✅ FIX: CardThemeData (not CardTheme)
+      cardTheme: CardThemeData(
         color: colorScheme.surface,
         elevation: 0.6,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
       ),
+
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: colorScheme.primary,
         foregroundColor: colorScheme.onPrimary,

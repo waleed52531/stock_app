@@ -21,9 +21,17 @@ class InMemoryMarketRepository implements MarketRepository {
 
   final List<MarketSymbol> _symbols = const [
     MarketSymbol(symbol: 'HBL', exchange: 'XKAR', displayName: 'Habib Bank'),
-    MarketSymbol(symbol: 'PNSC', exchange: 'XKAR', displayName: 'Pakistan National Shipping'),
+    MarketSymbol(
+      symbol: 'PNSC',
+      exchange: 'XKAR',
+      displayName: 'Pakistan National Shipping',
+    ),
     MarketSymbol(symbol: 'ENGRO', exchange: 'XKAR', displayName: 'Engro Corporation'),
-    MarketSymbol(symbol: 'OGDC', exchange: 'XKAR', displayName: 'Oil & Gas Development'),
+    MarketSymbol(
+      symbol: 'OGDC',
+      exchange: 'XKAR',
+      displayName: 'Oil & Gas Development',
+    ),
     MarketSymbol(symbol: 'LUCK', exchange: 'XKAR', displayName: 'Lucky Cement'),
     MarketSymbol(symbol: 'UBL', exchange: 'XKAR', displayName: 'United Bank Limited'),
     MarketSymbol(symbol: 'PSO', exchange: 'XKAR', displayName: 'Pakistan State Oil'),
@@ -46,9 +54,8 @@ class InMemoryMarketRepository implements MarketRepository {
   final Map<String, Map<ChartRange, _CachedSeries>> _seriesCache = {};
 
   void _seedWatchlist() {
-    if (_watchlist.isNotEmpty) {
-      return;
-    }
+    if (_watchlist.isNotEmpty) return;
+
     for (var i = 0; i < 3; i++) {
       _watchlist.add(
         WatchlistItem.fromSymbol(
@@ -71,7 +78,10 @@ class InMemoryMarketRepository implements MarketRepository {
       return false;
     }
     _watchlist.add(
-      WatchlistItem.fromSymbol(symbol: symbol, sortOrder: _watchlist.length),
+      WatchlistItem.fromSymbol(
+        symbol: symbol,
+        sortOrder: _watchlist.length,
+      ),
     );
     return true;
   }
@@ -91,6 +101,7 @@ class InMemoryMarketRepository implements MarketRepository {
     }
     final item = _watchlist.removeAt(oldIndex);
     _watchlist.insert(newIndex, item);
+
     for (var i = 0; i < _watchlist.length; i++) {
       _watchlist[i] = _watchlist[i].copyWith(sortOrder: i);
     }
@@ -98,24 +109,33 @@ class InMemoryMarketRepository implements MarketRepository {
 
   @override
   Future<Map<String, Quote>> fetchQuotes(
-    List<String> symbols, {
-    bool forceRefresh = false,
-  }) async {
+      List<String> symbols, {
+        bool forceRefresh = false,
+      }) async {
     final now = _now();
     final results = <String, Quote>{};
 
     for (final symbol in symbols) {
       final cached = _quoteCache[symbol];
-      final isFresh = cached != null && now.difference(cached.fetchedAt) < _quoteTtl;
+      final isFresh =
+          cached != null && now.difference(cached.fetchedAt) < _quoteTtl;
+
       if (!forceRefresh && isFresh) {
-        results[symbol] = cached;
+        results[symbol] = cached!;
         continue;
       }
 
-      final base = _basePrices[symbol] ?? 100;
-      final change = (_random.nextDouble() * 4) - 2;
-      final close = (base + change).clamp(1, 1000).toDouble();
-      final percent = (change / base) * 100;
+      // ✅ ensure double base
+      final base = _basePrices[symbol] ?? 100.0;
+
+      // change is double already
+      final change = (_random.nextDouble() * 4.0) - 2.0;
+
+      // clamp returns num -> force double
+      final close = (base + change).clamp(1.0, 1000.0).toDouble();
+
+      final percent = (change / base) * 100.0;
+
       final quote = Quote(
         symbol: symbol,
         close: close,
@@ -124,6 +144,7 @@ class InMemoryMarketRepository implements MarketRepository {
         asOfDate: DateTime(now.year, now.month, now.day),
         fetchedAt: now,
       );
+
       _quoteCache[symbol] = quote;
       results[symbol] = quote;
     }
@@ -133,24 +154,43 @@ class InMemoryMarketRepository implements MarketRepository {
 
   @override
   Future<List<TimeSeriesPoint>> fetchTimeSeries(
-    String symbol,
-    ChartRange range,
-  ) async {
+      String symbol,
+      ChartRange range,
+      ) async {
     final now = _now();
+
     final existing = _seriesCache[symbol]?[range];
     if (existing != null && now.difference(existing.fetchedAt) < _seriesTtl) {
       return existing.points;
     }
 
-    final base = _basePrices[symbol] ?? 100;
+    // ✅ ensure double base
+    final base = _basePrices[symbol] ?? 100.0;
+
     final points = <TimeSeriesPoint>[];
+
     for (var i = range.days; i >= 0; i--) {
       final date = now.subtract(Duration(days: i));
-      final wave = sin(i / 6) * 2;
-      final dailyClose = (base + wave + (_random.nextDouble() - 0.5)).clamp(1, 1000);
-      final dailyOpen = dailyClose + (_random.nextDouble() - 0.5);
-      final high = max(dailyClose, dailyOpen) + _random.nextDouble();
-      final low = min(dailyClose, dailyOpen) - _random.nextDouble();
+
+      // sin returns double
+      final wave = sin(i / 6.0) * 2.0;
+
+      // clamp returns num -> force double
+      final dailyClose = (base + wave + (_random.nextDouble() - 0.5))
+          .clamp(1.0, 1000.0)
+          .toDouble();
+
+      final dailyOpen = (dailyClose + (_random.nextDouble() - 0.5)).toDouble();
+
+      // max/min return num -> force double
+      final high =
+      (max(dailyClose, dailyOpen) + _random.nextDouble()).toDouble();
+
+      final low =
+      (min(dailyClose, dailyOpen) - _random.nextDouble()).toDouble();
+
+      final volume = (100000.0 + _random.nextDouble() * 20000.0).toDouble();
+
       points.add(
         TimeSeriesPoint(
           symbol: symbol,
@@ -159,7 +199,7 @@ class InMemoryMarketRepository implements MarketRepository {
           high: high,
           low: low,
           close: dailyClose,
-          volume: 100000 + _random.nextDouble() * 20000,
+          volume: volume,
         ),
       );
     }
@@ -168,22 +208,23 @@ class InMemoryMarketRepository implements MarketRepository {
       points: points,
       fetchedAt: now,
     );
+
     return points;
   }
 
   @override
   Future<List<MarketSymbol>> searchSymbols(String query) async {
     final trimmed = query.trim();
-    if (trimmed.isEmpty) {
-      return [];
-    }
+    if (trimmed.isEmpty) return [];
+
     final lower = trimmed.toLowerCase();
+
     return _symbols
         .where(
           (symbol) =>
-              symbol.symbol.toLowerCase().contains(lower) ||
-              symbol.displayName.toLowerCase().contains(lower),
-        )
+      symbol.symbol.toLowerCase().contains(lower) ||
+          symbol.displayName.toLowerCase().contains(lower),
+    )
         .toList();
   }
 }
